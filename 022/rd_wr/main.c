@@ -119,7 +119,8 @@ int main(int arg,char **argv)	//arg - кол-во аргументов
 	while(1)
 	{
 		int size = my_vector.size();
-		share_size = &size;
+		//share_size = &size;
+		memcpy(share_size, &size,sizeof(int));
 		if(sig_flag == 1)
 		{             
 			fprintf(stderr,"........bay...\n");

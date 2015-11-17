@@ -19,7 +19,7 @@ int error_arg(char *name)
 {
 	printf("Error! options \n");
 	printf("Options:\n");
-	printf("%s name_child \n",name);
+	printf("%s number_mount\n",name);
 	exit (0);
 }
 
@@ -32,15 +32,15 @@ int main(int arg,char *argv[])
 	int count = atoi(argv[1]);
 
       	char name_mount[BUFSIZ];	
-	
+	//создаем в ./ директории для монтирования
 	for(int i=0;i<count;i++)
 	{
 		sprintf(name_mount,"./my_proc%d",i);
 	       	mkdir(name_mount, 0555);
-	        if (mount("proc", name_mount, "proc", 0, NULL) == -1)
-	        	errExit("mount");
+	        //if (mount("proc", name_mount, "proc", 0, NULL) == -1)
+	        //	errExit("mount");
         	
-		printf("Mounting %s\n", name_mount);
+		//printf("Mounting %s\n", name_mount);
 	}
 
 	for(int j=0;j<count;j++)
@@ -55,7 +55,13 @@ int main(int arg,char *argv[])
 		else if (pid == 0)
 		{
 			//если это потомок
-			unshare(CLONE_NEWPID|SIGCHLD);
+			unshare(CLONE_NEWPID);
+                	//монтируем
+			sprintf(name_mount,"./my_proc%d",j);
+			if (mount("proc", name_mount, "proc", 0, NULL) == -1)
+				errExit("mount");
+
+			printf("Mounting %s\n", name_mount);
 
 			//pid_t child_pid = getpid();
 			//if (waitpid(child_pid, NULL, 0) == -1)

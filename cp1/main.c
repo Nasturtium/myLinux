@@ -15,9 +15,9 @@ int flag_usr1, flag_usr2;
 void sig_handler1(int s)
 {
 	flag_usr1++;
-	openlog("stat_server", 0, LOG_USER);
+//	openlog("stat_server", 0, LOG_USER);
 	syslog(LOG_NOTICE, "Daemont working sig1 %d",flag_usr1);
-	closelog();
+//	closelog();
 //	if(raise(SIGTERM)==-1)
 //		printf("Error: SIGTERM \n");
 }
@@ -25,9 +25,9 @@ void sig_handler1(int s)
 void sig_handler2(int s)
 {
 	flag_usr2++;
-        openlog("stat_server", 0, LOG_USER);
+//        openlog("stat_server", 0, LOG_USER);
         syslog(LOG_NOTICE, "Daemont working sig2 %d",flag_usr2);
-        closelog();
+//        closelog();
 }
 
 int main(int arg,char *argv[])
@@ -66,27 +66,22 @@ int main(int arg,char *argv[])
                 sigemptyset(&sig_usr1.sa_mask);          //обнуляем
                 sig_usr1.sa_flags = 0;                   //набор флагов
                 sig_usr1.sa_handler = sig_handler1;      //функция-обработчик
-                if(sigaction(SIGUSR1,&sig_usr1,NULL)==-1)       //10=SIGUSR1
-                {
-                       printf("Error: sigaction() sig1 \n");
-                       return 1;
-                }
-                //sig_usr2
+                if(sigaction(SIGUSR1,&sig_usr1,NULL)==-1)       //10=SIGUSR1   kill -l
+                       syslog(LOG_NOTICE,"Daemont error: sigaction() sig1");
+                                       
+		//sig_usr2
                 struct sigaction sig_usr2;
                 sigemptyset(&sig_usr2.sa_mask);
                 sig_usr2.sa_flags = 0;
                 sig_usr2.sa_handler = sig_handler2;
-                if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2
-                {
-                        printf("Error: sigaction() sig2 \n");
-                        return 1;
-                }
-
+                if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2   kill -l
+                        syslog(LOG_NOTICE,"Daemont error: sigaction() sig2");
+                                
 		char message[BUFSIZ];	
 		int sock = socket(AF_INET,SOCK_STREAM,0);
 		if(sock == -1)
 		{
-			fprintf(stderr,"ERROR: create socket() \n");
+			syslog(LOG_NOTICE,"Daemont error: create socket");
 			exit(1);
 		}
         	
@@ -104,15 +99,15 @@ int main(int arg,char *argv[])
 			exit(1);
 		}
 		listen(sock,5);		//очередь входных подключений
-		int name_client = 0;	//имя клиента (просто порядковый номер)
+syslog(LOG_NOTICE, "listen");
+
 		while(1)
 		{
 			//запрос на соединение
 			int sock_accept = accept(sock,NULL,NULL);	//новый сокет для работы
 			if(sock_accept < 0)
-			{
-				printf("accept () \n");
-			}
+				syslog(LOG_NOTICE,"sock_accept ()");
+syslog(LOG_NOTICE,"sock!!!!");			
 			while(1)
 			{
 				//ожидаем сообщение от клиента

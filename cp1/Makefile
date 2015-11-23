@@ -1,7 +1,7 @@
 #this is universal makefile
 CC=g++
 CLEAN=rm -f
-PROGRAM_NAME=stat_server
+PROGRAM_NAME=start_cp1
 OBJECT_FILES=main.o
 SOURCE_FILES=main.c
 

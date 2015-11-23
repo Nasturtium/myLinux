@@ -10,93 +10,79 @@
 #include <sys/wait.h>
 #include <syslog.h>
 
-#define HTML_text	200
-#define HTML_image	201
-#define HTML_error	404
-
-bool start_dmn = false;
-
-void sig_handler(int s)
+void sig_handler1(int s)
 {
-	printf("bye...\n");
-	if(start_dmn)
-	{
-		openlog("stat_server", 0, LOG_USER);
-		syslog(LOG_NOTICE, "Daemont end working");
-		closelog();
-	}	
-	if(raise(SIGTERM)==-1)
-		printf("Error: SIGTERM \n");
+	printf("hi signal_usr1...\n");
+	openlog("stat_server", 0, LOG_USER);
+	syslog(LOG_NOTICE, "Daemont working sig1");
+	closelog();
+		
+//	if(raise(SIGTERM)==-1)
+//		printf("Error: SIGTERM \n");
 }
 
-int error_arg()
+void sig_handler2(int s)
 {
-	printf("Error! options \n");
-	printf("Options:\n");
-	printf("        -pXXXX port number\n");
-	printf("        -d daemon\n\n");
-	printf("Usage:\n./static_server -pXXXX\n");
-	printf("./static_server -pXXXX -d\n\n");
-	exit (0);
+	printf("hello signal_usr2...\n");
+        openlog("stat_server", 0, LOG_USER);
+        syslog(LOG_NOTICE, "Daemont working");
+        closelog();
+
+//      if(raise(SIGTERM)==-1)
+//		printf("Error: SIGTERM \n");
 }
-	
+
 int main(int arg,char *argv[])
 {
-	int  rez = 0;					//getopt()
-	//bool start_dmn = false;
-	int  my_port = 0;
+	openlog("stat_server", 0, LOG_USER);
+	syslog(LOG_NOTICE, "Parent is starting");
+	closelog();
+	printf("starting...\n");
 
-	while((rez = getopt(arg,argv,"p:d"))!=-1){	//перебираем все опции пока не будет -1
-		switch(rez){
-			case 'p':
-			        my_port = atoi(optarg);
-				break;
-			case 'd':
-				start_dmn = true;
-				break;
-			default:
-				error_arg();
-		}
+	pid_t pid = fork();     //создаем потомка
+	if(pid == -1)
+	{	//если не удалось запустить потомка	
+		printf("Error: start Daemon failed\n");
+		exit (1);
 	}
-
-	if(!arg || !my_port)
-		error_arg();
+	else if(pid == 0)
+	{	//если это потомок
+		setsid();       //создаем новый сеанс
+		chdir("/");     //идем в корень
+		//закрываем дескрипторы ввода/вывода/ошибок
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+		
+		openlog("stat_server", 0, LOG_USER);
+		syslog(LOG_NOTICE, "Daemont start working");
+		closelog();
+		sleep(1);
 	
-	if(start_dmn == true)
-	{
-        struct sigaction sig_act;
-         sigemptyset(&sig_act.sa_mask);          //обнуляем
-         sig_act.sa_flags = 0;                   //набор флагов
-         sig_act.sa_handler = sig_handler;       //функция-обработчик
- 
-         if(sigaction(SIGINT,&sig_act,NULL)==-1){
-                 printf("Error: sigaction() \n");
-                 return 1;
-         }
-
-
-
-
-
-		pid_t pid = fork();     //создаем потомка
-		if(pid == -1){  //если не удалось запустить потомка	
-			printf("Error: start Daemon failed\n");
-			exit (1);
+		//sig_usr1
+		struct sigaction sig_usr1;
+		sigemptyset(&sig_usr1.sa_mask);          //обнуляем
+		sig_usr1.sa_flags = 0;                   //набор флагов
+		sig_usr1.sa_handler = sig_handler1;      //функция-обработчик
+		if(sigaction(SIGUSR1,&sig_usr1,NULL)==-1)       //10=SIGUSR1
+		{
+			printf("Error: sigaction() sig1 \n");
+			return 1;
 		}
-		else if (pid == 0){     //если это потомок
-			setsid();       //создаем новый сеанс
-			chdir("/");     //идем в корень
-			//закрываем дескрипторы ввода/вывода/ошибок
-			close(STDIN_FILENO);
-			close(STDOUT_FILENO);
-			close(STDERR_FILENO);
-			//return stat_dmn;
-
-			openlog("stat_server", 0, LOG_USER);
-			syslog(LOG_NOTICE, "Daemont start working");
-			closelog();
-		}
-	}
-
+		//sig_usr2
+		struct sigaction sig_usr2;
+		sigemptyset(&sig_usr2.sa_mask);    
+		sig_usr2.sa_flags = 0;             
+		sig_usr2.sa_handler = sig_handler2;
+		if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2
+		{
+			printf("Error: sigaction() sig2 \n");
+			return 1;
+		} 
+	
+		while(1);
+	} 
+	else	//parent
+		printf("bay....\n");
 return 0; 
 }

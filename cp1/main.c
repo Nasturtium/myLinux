@@ -99,17 +99,19 @@ int main(int arg,char *argv[])
 			exit(1);
 		}
 		listen(sock,5);		//очередь входных подключений
-syslog(LOG_NOTICE, "listen");
+		syslog(LOG_NOTICE, "Daemon listen");
 
 		while(1)
 		{
 			//запрос на соединение
 			int sock_accept = accept(sock,NULL,NULL);	//новый сокет для работы
 			if(sock_accept < 0)
-				syslog(LOG_NOTICE,"sock_accept ()");
-syslog(LOG_NOTICE,"sock!!!!");			
+				syslog(LOG_NOTICE,"Daemon error sock_accept");
+			
+			syslog(LOG_NOTICE,"Daemon sock conection!!!!");			
 			while(1)
 			{
+ 				memset(&message,0,BUFSIZ);
 				//ожидаем сообщение от клиента
 				int bytes = recv(sock_accept,message,sizeof(message),0);
 				if(bytes<=0)

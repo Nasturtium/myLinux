@@ -12,7 +12,6 @@
 
 void sig_handler1(int s)
 {
-	printf("hi signal_usr1...\n");
 	openlog("stat_server", 0, LOG_USER);
 	syslog(LOG_NOTICE, "Daemont working sig1");
 	closelog();
@@ -23,7 +22,6 @@ void sig_handler1(int s)
 
 void sig_handler2(int s)
 {
-	printf("hello signal_usr2...\n");
         openlog("stat_server", 0, LOG_USER);
         syslog(LOG_NOTICE, "Daemont working");
         closelog();

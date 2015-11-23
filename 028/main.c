@@ -32,7 +32,7 @@ int main(int arg,char *argv[])
 	int count = atoi(argv[1]);
 
       	char name_mount[BUFSIZ];	
-	//создаем в ./ директории для монтирования
+	//создаем директории для монтирования
 	for(int i=0;i<count;i++)
 	{
 		sprintf(name_mount,"./my_proc%d",i);
@@ -55,7 +55,7 @@ int main(int arg,char *argv[])
 		else if (pid == 0)
 		{
 			//если это потомок
-			unshare(CLONE_NEWPID);
+			unshare(CLONE_NEWPID);  //| SIGCHLD - не работает флаг
                 	//монтируем
 			sprintf(name_mount,"./my_proc%d",j);
 			if (mount("proc", name_mount, "proc", 0, NULL) == -1)

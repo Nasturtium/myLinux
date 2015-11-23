@@ -35,9 +35,9 @@ int main(int arg,char *argv[])
 	flag_usr1=0;
 	flag_usr2=0;
 
-	openlog("stat_server", 0, LOG_USER);
+//	openlog("stat_server", 0, LOG_USER);
 	syslog(LOG_NOTICE, "Parent is starting");
-	closelog();
+//	closelog();
 	printf("starting...\n");
 
 	pid_t pid = fork();     //создаем потомка
@@ -47,7 +47,8 @@ int main(int arg,char *argv[])
 		exit (1);
 	}
 	else if(pid == 0)
-	{	//если это потомок
+	{
+		//если это потомок
 		setsid();       //создаем новый сеанс
 		chdir("/");     //идем в корень
 		//закрываем дескрипторы ввода/вывода/ошибок
@@ -55,36 +56,74 @@ int main(int arg,char *argv[])
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 		
-		openlog("stat_server", 0, LOG_USER);
+//		openlog("stat_server", 0, LOG_USER);
 		syslog(LOG_NOTICE, "Daemont start working");
-		closelog();
+//		closelog();
 		sleep(1);
-	
-		
 
+                //sig_usr1
+                struct sigaction sig_usr1;
+                sigemptyset(&sig_usr1.sa_mask);          //обнуляем
+                sig_usr1.sa_flags = 0;                   //набор флагов
+                sig_usr1.sa_handler = sig_handler1;      //функция-обработчик
+                if(sigaction(SIGUSR1,&sig_usr1,NULL)==-1)       //10=SIGUSR1
+                {
+                       printf("Error: sigaction() sig1 \n");
+                       return 1;
+                }
+                //sig_usr2
+                struct sigaction sig_usr2;
+                sigemptyset(&sig_usr2.sa_mask);
+                sig_usr2.sa_flags = 0;
+                sig_usr2.sa_handler = sig_handler2;
+                if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2
+                {
+                        printf("Error: sigaction() sig2 \n");
+                        return 1;
+                }
 
-		//sig_usr1
-		struct sigaction sig_usr1;
-		sigemptyset(&sig_usr1.sa_mask);          //обнуляем
-		sig_usr1.sa_flags = 0;                   //набор флагов
-		sig_usr1.sa_handler = sig_handler1;      //функция-обработчик
-		if(sigaction(SIGUSR1,&sig_usr1,NULL)==-1)       //10=SIGUSR1
+		char message[BUFSIZ];	
+		int sock = socket(AF_INET,SOCK_STREAM,0);
+		if(sock == -1)
 		{
-			printf("Error: sigaction() sig1 \n");
-			return 1;
+			fprintf(stderr,"ERROR: create socket() \n");
+			exit(1);
 		}
-		//sig_usr2
-		struct sigaction sig_usr2;
-		sigemptyset(&sig_usr2.sa_mask);    
-		sig_usr2.sa_flags = 0;             
-		sig_usr2.sa_handler = sig_handler2;
-		if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2
+        	
+		struct sockaddr_in serv_addr;
+		int my_port = htons(8888);				//port
+		memset(&serv_addr, 0, sizeof(sockaddr_in));		
+		//определяем параметры соединения
+		serv_addr.sin_family = AF_INET;			//internet
+		serv_addr.sin_port = htons(my_port);		//порт
+		serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);	//все
+		//связываемся с сетевым устрйством
+		if(bind(sock,(struct sockaddr*)&serv_addr,sizeof(serv_addr))<0)
 		{
-			printf("Error: sigaction() sig2 \n");
-			return 1;
-		} 
-	
-		while(1);
+			close(sock);
+			exit(1);
+		}
+		listen(sock,5);		//очередь входных подключений
+		int name_client = 0;	//имя клиента (просто порядковый номер)
+		while(1)
+		{
+			//запрос на соединение
+			int sock_accept = accept(sock,NULL,NULL);	//новый сокет для работы
+			if(sock_accept < 0)
+			{
+				printf("accept () \n");
+			}
+			while(1)
+			{
+				//ожидаем сообщение от клиента
+				int bytes = recv(sock_accept,message,sizeof(message),0);
+				if(bytes<=0)
+					break;
+				syslog(LOG_NOTICE, "message %s",message);
+
+			}
+		}
+
 	} 
 	else	//parent
 		printf("bay....\n");

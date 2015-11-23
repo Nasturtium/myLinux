@@ -10,28 +10,31 @@
 #include <sys/wait.h>
 #include <syslog.h>
 
+int flag_usr1, flag_usr2;
+
 void sig_handler1(int s)
 {
+	flag_usr1++;
 	openlog("stat_server", 0, LOG_USER);
-	syslog(LOG_NOTICE, "Daemont working sig1");
+	syslog(LOG_NOTICE, "Daemont working sig1 %d",flag_usr1);
 	closelog();
-		
 //	if(raise(SIGTERM)==-1)
 //		printf("Error: SIGTERM \n");
 }
 
 void sig_handler2(int s)
 {
+	flag_usr2++;
         openlog("stat_server", 0, LOG_USER);
-        syslog(LOG_NOTICE, "Daemont working");
+        syslog(LOG_NOTICE, "Daemont working sig2 %d",flag_usr2);
         closelog();
-
-//      if(raise(SIGTERM)==-1)
-//		printf("Error: SIGTERM \n");
 }
 
 int main(int arg,char *argv[])
 {
+	flag_usr1=0;
+	flag_usr2=0;
+
 	openlog("stat_server", 0, LOG_USER);
 	syslog(LOG_NOTICE, "Parent is starting");
 	closelog();
@@ -57,6 +60,9 @@ int main(int arg,char *argv[])
 		closelog();
 		sleep(1);
 	
+		
+
+
 		//sig_usr1
 		struct sigaction sig_usr1;
 		sigemptyset(&sig_usr1.sa_mask);          //обнуляем

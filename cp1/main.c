@@ -86,7 +86,7 @@ int main(int arg,char *argv[])
 		}
         	
 		struct sockaddr_in serv_addr;
-		int my_port = htons(8888);				//port
+		int my_port = 8888;				//port
 		memset(&serv_addr, 0, sizeof(sockaddr_in));		
 		//определяем параметры соединения
 		serv_addr.sin_family = AF_INET;			//internet

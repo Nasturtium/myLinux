@@ -15,19 +15,13 @@ int flag_usr1, flag_usr2;
 void sig_handler1(int s)
 {
 	flag_usr1++;
-//	openlog("stat_server", 0, LOG_USER);
-	syslog(LOG_NOTICE, "Daemont working sig1 %d",flag_usr1);
-//	closelog();
-//	if(raise(SIGTERM)==-1)
-//		printf("Error: SIGTERM \n");
+//	syslog(LOG_NOTICE, "Daemont working sig1 %d",flag_usr1);
 }
 
 void sig_handler2(int s)
 {
 	flag_usr2++;
-//        openlog("stat_server", 0, LOG_USER);
-        syslog(LOG_NOTICE, "Daemont working sig2 %d",flag_usr2);
-//        closelog();
+//      syslog(LOG_NOTICE, "Daemont working sig2 %d",flag_usr2);
 }
 
 int main(int arg,char *argv[])
@@ -35,9 +29,7 @@ int main(int arg,char *argv[])
 	flag_usr1=0;
 	flag_usr2=0;
 
-//	openlog("stat_server", 0, LOG_USER);
 	syslog(LOG_NOTICE, "Parent is starting");
-//	closelog();
 	printf("starting...\n");
 
 	pid_t pid = fork();     //создаем потомка
@@ -56,9 +48,7 @@ int main(int arg,char *argv[])
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 		
-//		openlog("stat_server", 0, LOG_USER);
 		syslog(LOG_NOTICE, "Daemont start working");
-//		closelog();
 		sleep(1);
 
                 //sig_usr1
@@ -121,24 +111,24 @@ int main(int arg,char *argv[])
 				
 				if(strstr(message,"stat"))
 					syslog(LOG_NOTICE,"Daemon flag_usr1 = %d & flag_usr2 = %d",flag_usr1,flag_usr2);
-				else if(strstr(message,"usr1"))
+				if(strstr(message,"usr1"))
 				{
 					kill(getpid(),SIGUSR1);
 					syslog(LOG_NOTICE,"Daemon flag_usr1 = %d",flag_usr1);
 				}
-				else if(strstr(message,"usr2"))
+				if(strstr(message,"usr2"))
                                 {
                                         kill(getpid(),SIGUSR2);
                                         syslog(LOG_NOTICE,"Daemon flag_usr2 = %d",flag_usr1);
                                 }
-                                else if(strstr(message,"exit"))
+                                if(strstr(message,"exit"))
                                 {
                                         syslog(LOG_NOTICE,"Daemon exit. Socket close");
 					close(sock);
                                         kill(getpid(),SIGTERM);
                                 }
-	 			else
-					syslog(LOG_NOTICE,"Daemon: command not found"); 
+	 			//else
+				//	syslog(LOG_NOTICE,"Daemon: command not found"); 
 			}
 		}
 

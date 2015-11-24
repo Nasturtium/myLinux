@@ -77,7 +77,7 @@ int main(int arg,char *argv[])
                 if(sigaction(SIGUSR2,&sig_usr2,NULL)==-1)       //12=SIGUSR2   kill -l
                         syslog(LOG_NOTICE,"Daemont error: sigaction() sig2");
                                 
-		char message[BUFSIZ];	
+		char message[5];//BUFSIZ];	
 		int sock = socket(AF_INET,SOCK_STREAM,0);
 		if(sock == -1)
 		{
@@ -116,8 +116,29 @@ int main(int arg,char *argv[])
 				int bytes = recv(sock_accept,message,sizeof(message),0);
 				if(bytes<=0)
 					break;
-				syslog(LOG_NOTICE, "message %s",message);
-
+				//syslog(LOG_NOTICE, "Daemon message: %s",message);
+				syslog(LOG_NOTICE,"waiting command: stat, usr1, usr2, exit");
+				
+				if(strstr(message,"stat"))
+					syslog(LOG_NOTICE,"Daemon flag_usr1 = %d & flag_usr2 = %d",flag_usr1,flag_usr2);
+				else if(strstr(message,"usr1"))
+				{
+					kill(getpid(),SIGUSR1);
+					syslog(LOG_NOTICE,"Daemon flag_usr1 = %d",flag_usr1);
+				}
+				else if(strstr(message,"usr2"))
+                                {
+                                        kill(getpid(),SIGUSR2);
+                                        syslog(LOG_NOTICE,"Daemon flag_usr2 = %d",flag_usr1);
+                                }
+                                else if(strstr(message,"exit"))
+                                {
+                                        syslog(LOG_NOTICE,"Daemon exit. Socket close");
+					close(sock);
+                                        kill(getpid(),SIGTERM);
+                                }
+	 			else
+					syslog(LOG_NOTICE,"Daemon: command not found"); 
 			}
 		}
 

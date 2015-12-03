@@ -48,7 +48,7 @@ static int init_func(void)
 
 	register_chrdev(major,MY_NAME,&chardev_fops);
         cdev_init(my_cdev,&chardev_fops);
-        cdev_add(my_cdev,first_node,minor);
+        cdev_add(my_cdev,first_node,1);
 
 	return 0;
 }

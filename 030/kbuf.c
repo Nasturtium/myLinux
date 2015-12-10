@@ -5,26 +5,54 @@
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
 
+//cmd ioctl
+#define IOCTL_GET_STATISTIC 0x456
+
 #define MY_NAME "kbuf"
+
+
+
+
+typedef struct
+{
+	int num_open;		//statistic
+	int num_release;
+	int num_read;
+	int num_write;
+	int num_ioctl;
+	
+}STATISTIC_CHARDEV;
+
+
+
 
 static const int major = 800;
 static const int minor = 0;
 struct cdev *my_cdev;
 
-
 static char BUF[100];
+static STATISTIC_CHARDEV statistic;		//struct!!!! chardev
 
 int chardev_open(struct inode *inode,struct file *file)
 {
         printk(KERN_INFO "function OPEN() \n");
+	statistic.num_open++;
         return 0;
 }
- 
+
+int chardev_release(struct inode *inode,struct file *file)
+{
+        printk(KERN_INFO "function RELEASE() \n");
+	statistic.num_release++;
+        return 0;
+}
+
 static ssize_t chardev_read(struct file *file, char __user *buf, size_t lbuf, loff_t *ppos)
 {
 	int nbytes = 0;
 	int nbytes_user = 1;
 	printk(KERN_INFO "function READ() \n");
+	statistic.num_read++;
 
 	nbytes_user = copy_to_user(BUF,buf,lbuf);
 	if(nbytes_user != 0)
@@ -45,6 +73,7 @@ static ssize_t chardev_write(struct file *file, const char __user *buf, size_t l
 	int nbytes = 0;
 	int nbytes_user = 1;
 	printk(KERN_INFO "function WRITE() \n");
+	statistic.num_write++;
 
 	nbytes_user = copy_from_user(BUF,buf,lbuf);
 	printk(KERN_INFO "str38 nbytes_user=%d BUF=%c \n",nbytes_user,BUF[0]);
@@ -63,12 +92,32 @@ static ssize_t chardev_write(struct file *file, const char __user *buf, size_t l
         //return -EINTR;
 }
 
-static const struct file_operations chardev_fops =
-						{
-						.owner = THIS_MODULE,
-						.open = chardev_open,
-						.read = chardev_read,
-						.write = chardev_write,
+long chardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	void *ptr_to_user = (void*)arg;
+
+	printk(KERN_INFO "function IOCTL() cmd = %d",cmd);	
+	statistic.num_ioctl++;	
+	
+	switch(cmd)
+	{
+		case IOCTL_GET_STATISTIC:
+			if(copy_to_user(ptr_to_user,&statistic,sizeof(statistic)))
+				printk(KERN_INFO "copy_to_user get statistic \n");
+		default:
+			printk(KERN_INFO "command not found \n");
+		
+	}
+	return 0;
+}
+
+static const struct file_operations chardev_fops = {
+							.owner = THIS_MODULE,
+							.open = chardev_open,
+							.release = chardev_release,
+							.read = chardev_read,
+							.write = chardev_write,
+							.unlocked_ioctl = chardev_ioctl,	
 						};
 static int init_func(void)
 {

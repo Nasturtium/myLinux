@@ -1,1 +1,14 @@
 http://www.linux.org.ru/forum/development/5817658
+
+
+char buf[23];
+
+fd = open("/dev/kbuf",..)
+ioctl(fd,1231,buf);
+
+
+...
+
+
+void *ptr_to_user = (void*)arg;
+(file *f, cmd, arg)

@@ -10,21 +10,16 @@
 
 #define MY_NAME "kbuf"
 
-
-
-
 typedef struct
 {
 	int num_open;		//statistic
 	int num_release;
 	int num_read;
 	int num_write;
+	int num_seek;
 	int num_ioctl;
 	
 }STATISTIC_CHARDEV;
-
-
-
 
 static const int major = 800;
 static const int minor = 0;
@@ -92,6 +87,27 @@ static ssize_t chardev_write(struct file *file, const char __user *buf, size_t l
         //return -EINTR;
 }
 
+loff_t chardev_llseek(struct file *file,loff_t off,int whence)
+{
+	
+	printk(KERN_INFO "function llseek() \n");
+	statistic.num_seek++;
+
+	switch(whence)
+	{
+		case SEEK_SET:
+			printk(KERN_INFO "seek = SEEK_SET \n");
+			break;
+		case SEEK_END:
+			printk(KERN_INFO "seek = SEEK_END \n");
+			break;
+		default:
+			printk(KERN_INFO "seek - command not found \n");
+			break;
+	}
+	return 0;
+}
+
 long chardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	void *ptr_to_user = (void*)arg;
@@ -104,9 +120,10 @@ long chardev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		case IOCTL_GET_STATISTIC:
 			if(copy_to_user(ptr_to_user,&statistic,sizeof(statistic)))
 				printk(KERN_INFO "copy_to_user get statistic \n");
+			break;
 		default:
 			printk(KERN_INFO "command not found \n");
-		
+			break;		
 	}
 	return 0;
 }
@@ -117,6 +134,7 @@ static const struct file_operations chardev_fops = {
 							.release = chardev_release,
 							.read = chardev_read,
 							.write = chardev_write,
+							.llseek = chardev_llseek,
 							.unlocked_ioctl = chardev_ioctl,	
 						};
 static int init_func(void)

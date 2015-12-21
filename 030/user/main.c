@@ -58,7 +58,7 @@ int main(int arg,char **argv)
                 exit(1);
 	}
 	//ioctl
-	ioctl(fd,0x456,&statistic);
+	ioctl(file,0x456,&statistic);
 	printf("function ioctl() for statistic \n");
 	printf("num_open = %d \n",statistic.num_open);
 	printf("num_read = %d \n",statistic.num_read);
@@ -67,7 +67,7 @@ int main(int arg,char **argv)
         printf("num_ioctl = %d \n",statistic.num_ioctl);
         printf("num_release = %d \n",statistic.num_release);
 
-	close(fd);	
+	close(file);	
 	return 0;
 }
 

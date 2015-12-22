@@ -31,14 +31,10 @@ struct cdev *my_cdev;
 
 struct mynet_device {
                          struct net_device *dev;
-                         int count_tr;
-                         // ?????
-                         };
-
-
+                         int count_tr;         
+                     };
 
 static char BUF[100];
-
 
 int chardev_open(struct inode *inode,struct file *file)
 {
@@ -122,8 +118,8 @@ int mynet_netdev_stop(struct net_device *dev)
  
 netdev_tx_t mynet_netdev_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
- 
-        return NET_XMIT_DROP;
+ 	return NETDEV_TX_OK;
+        //return NET_XMIT_DROP;
 }
 
 int mydev_init(struct net_device *dev)
@@ -143,8 +139,6 @@ void mydev_uninit(struct net_device *dev)
 	free_netdev(dev);
 }
 
-
-
 static const struct net_device_ops mynet_netdev_ops = {
                                                          .ndo_open = mynet_netdev_open,
                                                          .ndo_stop = mynet_netdev_stop,
@@ -157,35 +151,47 @@ static const struct net_device_ops mynet_netdev_ops = {
 
 static void mynet_netdev_init(struct net_device *dev)
 {
-         struct mynet_device *priv = netdev_priv(dev);
+        struct mynet_device *priv = netdev_priv(dev);
 
-         priv->dev = dev;
-         ether_setup(dev);
-         //dev->watchdog_timeo = timeout;
-         dev->netdev_ops = &mynet_netdev_ops;
-         dev->flags |=IFF_NOARP; 
- 
+	//printk(KERN_INFO "init_mynet! str156 \n");
+        priv->dev = dev;
+        ether_setup(dev);
+        //dev->watchdog_timeo = timeout;
+        dev->netdev_ops = &mynet_netdev_ops;
+        dev->flags |=IFF_NOARP; 
+	//printk(KERN_INFO "init_mynet! str162 \n"); 
 }
 
 static struct net_device *mynet_netdev_create(const char *name)
 {
 	struct net_device *dev;
-	
+
+	printk(KERN_INFO "mynet_create! str168\n");
 	dev = alloc_netdev(sizeof(struct mynet_device),name,NET_NAME_UNKNOWN,mynet_netdev_init);
+	if(dev == NULL)
+		printk(KERN_ERR "net device allocate failed\n");
+	printk(KERN_INFO "mynet_create! str171\n");
 	if(register_netdev(dev))
 	{
 	      printk(KERN_INFO "ERROR to register\n" ); 
 	      free_netdev(dev); 
-	      return -EINTR; 
+	      return NULL; 
 	}
-	//printk(KERN_INFO "Loading network module \n)"; 
+	 
 	return dev;
 }
 
 static int init_mynet(void)
 {
-
 	struct net_device *dev = mynet_netdev_create("mynet1");	
+
+	printk(KERN_INFO "init_mynet! str183 \n");
+	/*
+	if(mynet_netdev_create("mynet1"))
+	{
+		printk(KERN_INFO "ERROR netdev_create \n");
+		return -1;
+	}*/
 	return 0;
 }
 
@@ -212,7 +218,6 @@ static int init_func(void)
 		return -EINTR;
 	}
 
-	//my init
 	init_mynet();
 
 	return 0;
@@ -221,14 +226,10 @@ static int init_func(void)
 static void exit_func(void)//struct net_device *dev)
 {
 	dev_t first_node = MKDEV(major,minor);
-	//struct net_device *dev;
-	
+
 	printk(KERN_INFO "exit module ! \n");
 	cdev_del(my_cdev);
 	unregister_chrdev_region(first_node, 1);
-	//mynet
-	//unregister_netdev(dev);
-	//free_netdev(dev);
 }
 
 module_init(init_func);

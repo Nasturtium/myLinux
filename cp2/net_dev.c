@@ -7,7 +7,7 @@
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
-
+#include <linux/bitops.h>
 
 //cmd ioctl
 #define IOCTL_GET_STATISTIC 0x456
@@ -29,7 +29,12 @@ static const int major = 800;
 static const int minor = 0;
 struct cdev *my_cdev;
 
-//struct net_device *dev;
+struct mynet_device {
+                         struct net_device *dev;
+                         int count_tr;
+                         // ?????
+                         };
+
 
 
 static char BUF[100];
@@ -102,54 +107,65 @@ static const struct file_operations chardev_fops = {
 							.write = chardev_write,
 						};
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 int mynet_netdev_open(struct net_device *dev)
 {
-
-	return 0;
+ 
+         return 0;
 }
-
+ 
 int mynet_netdev_stop(struct net_device *dev)
 {
- 
+  
         return 0;
 }
-
+ 
 netdev_tx_t mynet_netdev_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-
-	return 0;
-//	return XMIT_DROP;
+ 
+        return NET_XMIT_DROP;
 }
+
+int mydev_init(struct net_device *dev)
+{
+	if(register_netdev(dev))
+        {
+              printk(KERN_INFO "ERROR to register\n" );
+              free_netdev(dev);
+              return -EINTR;
+        }
+	return 0;
+}
+
+void mydev_uninit(struct net_device *dev)
+{
+        unregister_netdev(dev);
+	free_netdev(dev);
+}
+
 
 
 static const struct net_device_ops mynet_netdev_ops = {
-							.ndo_open = mynet_netdev_open,
-							.ndo_stop = mynet_netdev_stop,
-							.ndo_start_xmit = mynet_netdev_start_xmit,
-							//.ndo_tx_timeout = mynet_netdev_tx_timeout,
-							//.ndo_get_stats = mynet_netdev_get_stats,
-						};
-
-struct mynet_device {
-			struct net_device *dev;
-			int count_tr;
-			// ?????
-			};
-
+                                                         .ndo_open = mynet_netdev_open,
+                                                         .ndo_stop = mynet_netdev_stop,
+                                                         .ndo_start_xmit = mynet_netdev_start_xmit,
+                                                         .ndo_init = mydev_init,
+                                                         .ndo_uninit = mydev_uninit,
+                                                         //.ndo_tx_timeout = mynet_netdev_tx_timeout,
+                                                         //.ndo_get_stats = mynet_netdev_get_stats,
+                                                 };
 
 static void mynet_netdev_init(struct net_device *dev)
 {
-	struct mynet_device *priv = netdev_priv(dev);
+         struct mynet_device *priv = netdev_priv(dev);
 
-	//??????????
-	ether_setup(dev);
-	//dev->watchdog_timeo = timeout;
-	dev->netdev_ops = &mynet_netdev_ops;
-	dev->flags |=IFF_NOARP;	
-
+         priv->dev = dev;
+         ether_setup(dev);
+         //dev->watchdog_timeo = timeout;
+         dev->netdev_ops = &mynet_netdev_ops;
+         dev->flags |=IFF_NOARP; 
+ 
 }
-
 
 static struct net_device *mynet_netdev_create(const char *name)
 {
@@ -160,7 +176,7 @@ static struct net_device *mynet_netdev_create(const char *name)
 	{
 	      printk(KERN_INFO "ERROR to register\n" ); 
 	      free_netdev(dev); 
-	      return -1; 
+	      return -EINTR; 
 	}
 	//printk(KERN_INFO "Loading network module \n)"; 
 	return dev;
@@ -205,14 +221,14 @@ static int init_func(void)
 static void exit_func(void)//struct net_device *dev)
 {
 	dev_t first_node = MKDEV(major,minor);
-	struct net_device *dev;
+	//struct net_device *dev;
 	
 	printk(KERN_INFO "exit module ! \n");
 	cdev_del(my_cdev);
 	unregister_chrdev_region(first_node, 1);
 	//mynet
-	unregister_netdev(dev);
-	free_netdev(dev);
+	//unregister_netdev(dev);
+	//free_netdev(dev);
 }
 
 module_init(init_func);
